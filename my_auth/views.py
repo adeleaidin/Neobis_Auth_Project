@@ -1,5 +1,5 @@
 from rest_framework import generics, status, views
-from .serializers import RegisterSerializer, EmailVerificationSerializer
+from .serializers import RegisterSerializer, EmailVerificationSerializer, LoginSerializer
 from rest_framework.response import Response
 from rest_framework_simplejwt.tokens import RefreshToken
 from .models import User
@@ -10,6 +10,7 @@ import jwt
 from django.conf import settings
 from drf_yasg.utils import swagger_auto_schema
 from drf_yasg import openapi
+from jwt import ExpiredSignatureError, DecodeError
 
 class RegisterView(generics.GenericAPIView):
 
@@ -43,37 +44,30 @@ class VerifyEmail(views.APIView):
 
     token_param_config = openapi.Parameter(
         'token', in_=openapi.IN_QUERY, description='Description',
-    type=openapi.TYPE_STRING)
+        type=openapi.TYPE_STRING)
 
     @swagger_auto_schema(manual_parameters=[token_param_config])
     def get(self, request):
         token = request.GET.get('token')
         try:
-            payload = jwt.decode(token, settings.SECRET_KEY)
+            payload = jwt.decode(token, settings.SECRET_KEY, algorithms=['HS256'])  # Specify the algorithm
             user = User.objects.get(id=payload['user_id'])
             if not user.is_verified:
                 user.is_verified = True
                 user.save()
 
-            return Response({'email': 'Successfully activated'},
-                            status=status.HTTP_200_OK)
+            return Response({'email': 'Successfully activated'}, status=status.HTTP_200_OK)
 
-        except jwt.ExpiredSignatureError as identifier:
-            return Response({'error': 'Activation link has expired'},
-                            status=status.HTTP_400_BAD_REQUEST)
-        except jwt.exceptions.DecodeError as identifier:
-            return Response({'error': 'Token is malformed or invalid'},
-                            status=status.HTTP_400_BAD_REQUEST)
+        except ExpiredSignatureError:
+            return Response({'error': 'Activation link has expired'}, status=status.HTTP_400_BAD_REQUEST)
+        except DecodeError:
+            return Response({'error': 'Token is malformed or invalid'}, status=status.HTTP_400_BAD_REQUEST)
 
 
+class LoginAPIView(generics.GenericAPIView):
+    serializer_class = LoginSerializer
+    def post(self, request):
+        serializer = self.serializer_class(data=request.data)
+        serializer.is_valid(raise_exception=True)
 
-# from django.core.mail import send_mail
-#
-# def my_view(request):
-#     #...
-#     subject = 'Test email from Django'
-#     message = 'This is a test email sent from Django.'
-#     from_email = 'your_email_address@gmail.com'
-#     recipient_list = ['recipient@example.com']
-#     send_mail(subject, message, from_email, recipient_list)
-#     #...
+        return Response(serializer.data, status=status.HTTP_200_OK)

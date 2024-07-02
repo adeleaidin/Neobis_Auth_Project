@@ -1,10 +1,9 @@
 from django.db import models
-from django.contrib.auth.models import (AbstractBaseUser, BaseUserManager, PermissionsMixin)
+from django.contrib.auth.models import AbstractBaseUser, BaseUserManager, PermissionsMixin
 from rest_framework_simplejwt.tokens import RefreshToken
 
-# Create your models here.
 class UserManager(BaseUserManager):
-    def create_user(self, username, email,password=None):
+    def create_user(self, username, email, password=None):
         if username is None:
             raise TypeError('User should have a username')
         if email is None:
@@ -12,14 +11,14 @@ class UserManager(BaseUserManager):
 
         user = self.model(username=username, email=self.normalize_email(email))
         user.set_password(password)
-        user.save()
+        user.save(using=self._db)
         return user
 
-    def create_superuser(self, username, email,password=None):
+    def create_superuser(self, username, email, password=None):
         if password is None:
             raise TypeError('Password should not be none')
 
-        user = self.create_user(username,email,password)
+        user = self.create_user(username, email, password)
         user.is_superuser = True
         user.is_staff = True
         user.save()
@@ -34,8 +33,8 @@ class User(AbstractBaseUser, PermissionsMixin):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    USERNAME_FIELD = 'email'
-    REQUIRED_FIELDS = ['username']
+    USERNAME_FIELD = 'username'
+    REQUIRED_FIELDS = ['email']
 
     objects = UserManager()
 
@@ -45,6 +44,6 @@ class User(AbstractBaseUser, PermissionsMixin):
     def tokens(self):
         refresh = RefreshToken.for_user(self)
         return {
-            'refresh':str(refresh),
-            'access':str(refresh.access_token),
+            'refresh': str(refresh),
+            'access': str(refresh.access_token),
         }

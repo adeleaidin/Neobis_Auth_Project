@@ -44,14 +44,14 @@ INSTALLED_APPS = [
     'my_auth',
     'rest_framework',
     'drf_yasg',
-    # "corsheaders",
+    "corsheaders",
 ]
 
 MIDDLEWARE = [
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
 
-    # "corsheaders.middleware.CorsMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
 
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -163,3 +163,11 @@ EMAIL_PORT = 587
 EMAIL_HOST_USER = configg('EMAIL_HOST_USER')
 EMAIL_HOST_PASSWORD = configg('EMAIL_HOST_PASSWORD')
 
+# csrf
+CSRF_TRUSTED_ORIGINS = ['https://pudge-backender.org.kg']
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+
+
+# CORS setting
+CORS_ORIGIN_ALLOW_ALL = True
+CORS_ALLOW_HEADERS = "*"
